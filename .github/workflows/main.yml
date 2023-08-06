@@ -1,0 +1,32 @@
+name: checking Workflow
+
+on:
+  pull_request:
+    branches: [master, main, develop]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+
+      - name: Install dependencies and build
+        run: |
+          npm install
+          npm run build
+
+      - name: Merge pull request (if conditions are met)
+        if: ${{ success() && github.ref == 'refs/pull/${{ github.event.pull_request.number }}/merge' }}
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@users.noreply.github.com"
+          git checkout main
+          git pull origin main
+          git merge --no-ff ${{ github.event.pull_request.head.ref }} -m "Merge PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}"
+          git push origin main
